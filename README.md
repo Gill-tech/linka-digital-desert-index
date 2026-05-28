@@ -1,4 +1,3 @@
-Here is everything you need to set up the Linka GitHub repository properly.
 
 `linka-digital-desert-index`
 
