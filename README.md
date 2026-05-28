@@ -1,7 +1,5 @@
 Here is everything you need to set up the Linka GitHub repository properly.
 
-
-## Repository name
 `linka-digital-desert-index`
 
 ## Description (the one-liner that appears under the repo name)
