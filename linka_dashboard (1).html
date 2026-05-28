@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINKA — Kenya Digital Desert Index | ITU Data Hackathon 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --card: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a18;
+    --muted: #6b6b67;
+    --accent: #1d4ed8;
+    --blue: #3b82f6;
+    --teal: #0f6e56;
+    --amber: #b45309;
+    --red: #991b1b;
+    --green: #166534;
+    --purple: #5b21b6;
+
+    --t-urban: #1d9e75;
+    --t-periurban: #3b82f6;
+    --t-unaffordable: #d97706;
+    --t-skills: #7c3aed;
+    --t-infra: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f4c3a 100%);
+    color: white;
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  .hero h1 span { color: #34d399; }
+  .hero p { margin-top: 12px; opacity: 0.75; max-width: 620px; font-size: 15px; }
+  .hero-meta { display: flex; gap: 32px; margin-top: 28px; }
+  .hero-meta-item label { display: block; font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.08em; }
+  .hero-meta-item span { font-size: 22px; font-weight: 700; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .section { padding: 40px 0; }
+  .section-title {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted); margin-bottom: 20px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 26px; }
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+
+  /* ── KPI CARDS ── */
+  .kpi { text-align: center; padding: 24px 16px; }
+  .kpi-value { font-size: 36px; font-weight: 700; line-height: 1; margin: 4px 0; }
+  .kpi-label { font-size: 12px; color: var(--muted); }
+  .kpi-delta { font-size: 12px; margin-top: 6px; padding: 2px 8px; border-radius: 12px; display: inline-block; }
+  .kpi-delta.bad { background: #fef2f2; color: var(--red); }
+  .kpi-delta.ok { background: #f0fdf4; color: var(--green); }
+  .kpi-delta.warn { background: #fffbeb; color: var(--amber); }
+
+  /* ── THE GAP VISUALIZER ── */
+  .gap-viz { position: relative; }
+  .gap-bar-outer {
+    background: #e5e7eb;
+    border-radius: 6px;
+    height: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gap-bar-coverage { position: absolute; left: 0; top: 0; height: 100%; background: #3b82f6; border-radius: 6px; transition: width 0.6s ease; }
+  .gap-bar-use      { position: absolute; left: 0; top: 0; height: 100%; background: #10b981; border-radius: 6px; transition: width 0.6s ease; }
+
+  /* ── COUNTY TABLE ── */
+  .county-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .county-table th { text-align: left; padding: 8px 12px; background: #f1f5f9; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .county-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); vertical-align: middle; }
+  .county-table tr:hover td { background: #f8fafc; }
+  .county-table tbody tr:last-child td { border-bottom: none; }
+
+  /* ── TYPOLOGY BADGES ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-urban      { background: #d1fae5; color: #065f46; }
+  .badge-periurban  { background: #dbeafe; color: #1e3a8a; }
+  .badge-unafford   { background: #fef3c7; color: #78350f; }
+  .badge-skills     { background: #ede9fe; color: #4c1d95; }
+  .badge-infra      { background: #fee2e2; color: #7f1d1d; }
+
+  /* ── DDI METER ── */
+  .ddi-bar { height: 6px; border-radius: 3px; background: #e5e7eb; overflow: hidden; margin-top: 4px; }
+  .ddi-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  /* ── FILTER TABS ── */
+  .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .filter-tab {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: white; cursor: pointer; font-size: 12px; font-weight: 500;
+    transition: all 0.15s; color: var(--muted);
+  }
+  .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── PRIORITY INDICATORS ── */
+  .priority-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .priority-low      { background: #10b981; }
+  .priority-medium   { background: #f59e0b; }
+  .priority-high     { background: #ef4444; }
+  .priority-critical { background: #7f1d1d; }
+
+  /* ── TYPOLOGY LEGEND ── */
+  .typology-card {
+    border-left: 4px solid;
+    padding: 16px;
+    border-radius: 0 8px 8px 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .typology-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .typology-card p  { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .typology-card .intervention { font-size: 11px; background: #f8f7f4; padding: 6px 10px; border-radius: 4px; margin-top: 6px; }
+
+  /* ── SEARCH ── */
+  .search-input {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; outline: none; background: white;
+    margin-bottom: 16px;
+  }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,78,216,0.1); }
+
+  /* ── CHART AREA ── */
+  .chart-wrap { position: relative; }
+
+  /* ── NATIONAL MAP SVG ── */
+  .county-map-area path { cursor: pointer; transition: opacity 0.2s; }
+  .county-map-area path:hover { opacity: 0.75; stroke-width: 1.5; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #0f172a; color: rgba(255,255,255,0.6);
+    padding: 32px 40px; font-size: 12px; margin-top: 60px;
+  }
+  .footer a { color: #60a5fa; text-decoration: none; }
+  .footer strong { color: white; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ HERO ════ -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-tag">ITU Data Hackathon 2026 · Team Linka · Kenya</div>
+    <h1>Uncovering Kenya's<br><span>Invisible Digital Deserts</span></h1>
+    <p>Where mobile signal exists but meaningful internet use doesn't — a county-level analysis of Kenya's hidden connectivity gap using the Digital Desert Index (DDI).</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><label>National internet use</label><span>35%</span></div>
+      <div class="hero-meta-item"><label>4G coverage</label><span>~74%</span></div>
+      <div class="hero-meta-item"><label>Coverage–use gap</label><span>~39pp</span></div>
+      <div class="hero-meta-item"><label>Counties analysed</label><span>47</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ NATIONAL KPIs ════ -->
+<div class="container">
+  <div class="section">
+    <div class="section-title">National snapshot — Kenya 2024</div>
+    <div class="grid-4">
+      <div class="card kpi">
+        <div class="card-title">Internet use</div>
+        <div class="kpi-value" style="color:#1d9e75">35%</div>
+        <div class="kpi-label">of population (2024)</div>
+        <div class="kpi-delta ok">↑ from 22.7% in 2019</div>
+      </div>
+      <div class="card kpi">
+        <div class="card-title">Urban vs Rural</div>
+        <div class="kpi-value" style="color:#d97706">56.6%</div>
+        <div class="kpi-label">urban — only 25% rural</div>
+        <div class="kpi-delta bad">31.6pp urban–rural gap</div>
+      </div>
+      <div class="card kpi">
+        <div class="card-title">Data cost (ITU target: 2%)</div>
+        <div class="kpi-value" style="color:#dc2626">3.9%</div>
+        <div class="kpi-label">of GNI/capita (Africa avg)</div>
+        <div class="kpi-delta bad">2× above affordability target</div>
+      </div>
+      <div class="card kpi">
+        <div class="card-title">Electricity access</div>
+        <div class="kpi-value" style="color:#3b82f6">76%</div>
+        <div class="kpi-label">national average</div>
+        <div class="kpi-delta warn">8.8% in Turkana county</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ COVERAGE vs USE GAP ════ -->
+  <div class="section">
+    <div class="section-title">The invisible desert paradox — coverage vs. actual use (county level)</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:12px;height:12px;border-radius:2px;background:#3b82f6;display:inline-block"></span>4G coverage %</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:12px;height:12px;border-radius:2px;background:#10b981;display:inline-block"></span>Internet use %</div>
+        <div style="margin-left:auto;font-size:12px;color:var(--muted)">Sorted by DDI score (worst first)</div>
+      </div>
+      <div id="gapViz" style="max-height:440px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ CHARTS ROW ════ -->
+  <div class="section">
+    <div class="section-title">DDI analysis — what drives digital exclusion?</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Digital Desert Index distribution across 47 counties</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="ddiChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Internet use vs. data cost (% GNI/capita)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="scatterChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">County typology breakdown (47 counties)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="typologyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Internet use change 2019→2024 (selected counties)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ TYPOLOGIES ════ -->
+  <div class="section">
+    <div class="section-title">Digital desert typologies — 5 intervention archetypes</div>
+    <div class="grid-3" style="gap:16px">
+      <div class="typology-card" style="border-color:#1d9e75">
+        <h4 style="color:#065f46">🟢 Urban Connected</h4>
+        <p>High coverage + high use. Nairobi, Kiambu, Mombasa.</p>
+        <div><strong>1–2 counties</strong> · DDI: 0–25</div>
+        <div class="intervention">→ Sustain. Focus on quality, speeds, inclusivity for PWDs.</div>
+      </div>
+      <div class="typology-card" style="border-color:#3b82f6">
+        <h4 style="color:#1e3a8a">🔵 Peri-Urban Connected</h4>
+        <p>High coverage, moderate use. Transitional counties near urban hubs.</p>
+        <div><strong>3–4 counties</strong> · DDI: 15–35</div>
+        <div class="intervention">→ Last-mile device financing, SME digital adoption programs.</div>
+      </div>
+      <div class="typology-card" style="border-color:#d97706">
+        <h4 style="color:#78350f">🟠 Covered but Unaffordable</h4>
+        <p>4G exists. Data cost exceeds 3.5% GNI/capita. Use suppressed.</p>
+        <div><strong>~14 counties</strong> · DDI: 28–55</div>
+        <div class="intervention">→ Zero-rating, shared plans, USF-subsidised access points.</div>
+      </div>
+      <div class="typology-card" style="border-color:#7c3aed">
+        <h4 style="color:#4c1d95">🟣 Covered, Low Skills</h4>
+        <p>Signal present. Literacy/education suppress adoption.</p>
+        <div><strong>~15 counties</strong> · DDI: 40–65</div>
+        <div class="intervention">→ Swahili digital literacy, community hubs, school programs.</div>
+      </div>
+      <div class="typology-card" style="border-color:#dc2626">
+        <h4 style="color:#7f1d1d">🔴 Infrastructure Gap</h4>
+        <p>Low coverage + low electricity. ASAL counties. Multi-barrier exclusion.</p>
+        <div><strong>~15 counties</strong> · DDI: 60–100</div>
+        <div class="intervention">→ USF towers, solar base stations, LEO satellite, REA co-invest.</div>
+      </div>
+      <div class="typology-card" style="border-color:#6b6b67">
+        <h4 style="color:#374151">⬜ The Wajir-Mandera Anomaly</h4>
+        <p>Fast internet growth 2019→2024 despite ASAL geography. High cost burden remains.</p>
+        <div><strong>2 counties</strong> · Fast growth, high DDI</div>
+        <div class="intervention">→ Monitor. Diaspora-driven? M-Pesa adoption pathways?</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ COUNTY TABLE ════ -->
+  <div class="section">
+    <div class="section-title">County-level Digital Desert Index — all 47 counties</div>
+
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all">All counties</button>
+      <button class="filter-tab" data-filter="infrastructure_gap">Infrastructure gap</button>
+      <button class="filter-tab" data-filter="covered_unaffordable">Covered, unaffordable</button>
+      <button class="filter-tab" data-filter="covered_low_skills">Covered, low skills</button>
+      <button class="filter-tab" data-filter="urban_connected">Urban connected</button>
+      <button class="filter-tab" data-filter="critical">Critical priority</button>
+    </div>
+
+    <input class="search-input" id="countySearch" placeholder="🔍  Search county name..." oninput="filterTable()">
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table class="county-table" id="countyTable">
+          <thead>
+            <tr>
+              <th>County</th>
+              <th>Region</th>
+              <th>Internet use 2024</th>
+              <th>vs 2019</th>
+              <th>4G coverage</th>
+              <th>Electricity</th>
+              <th>Data cost (GNI%)</th>
+              <th>DDI score</th>
+              <th>Typology</th>
+              <th>Priority</th>
+            </tr>
+          </thead>
+          <tbody id="countyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ POLICY RECS ════ -->
+  <div class="section">
+    <div class="section-title">Policy recommendations — linked to evidence</div>
+    <div class="grid-3" style="gap:16px">
+      <div class="card">
+        <div style="font-size:22px;margin-bottom:10px">💰</div>
+        <h3 style="font-size:14px;margin-bottom:8px">Affordability interventions</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">For 14+ counties where cost exceeds 3.5% GNI/capita</p>
+        <ul style="font-size:12px;padding-left:16px;line-height:2;color:#374151">
+          <li>Zero-rate education + government portals</li>
+          <li>Community shared WiFi (market centres)</li>
+          <li>Spectrum cost reduction → ISP pass-through</li>
+          <li>Safaricom Lipa Mdogo Mdogo device financing</li>
+          <li>Household data voucher subsidy program</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div style="font-size:22px;margin-bottom:10px">📚</div>
+        <h3 style="font-size:14px;margin-bottom:8px">Digital skills programs</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">For 15+ counties with coverage but low education index</p>
+        <ul style="font-size:12px;padding-left:16px;line-height:2;color:#374151">
+          <li>Swahili-first digital literacy curriculum</li>
+          <li>Sub-county digital hubs at existing schools</li>
+          <li>Train-the-trainer via local champions</li>
+          <li>WhatsApp-based micro-learning delivery</li>
+          <li>Women + youth targeted cohorts</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div style="font-size:22px;margin-bottom:10px">📡</div>
+        <h3 style="font-size:14px;margin-bottom:8px">Infrastructure investment</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">For 15 critical counties with coverage + electricity gaps</p>
+        <ul style="font-size:12px;padding-left:16px;line-height:2;color:#374151">
+          <li>USF deployment to arid/semi-arid counties</li>
+          <li>Solar-powered base stations (off-grid)</li>
+          <li>LEO satellite (Starlink-type) pilots</li>
+          <li>Tower co-location mandates to cut cost</li>
+          <li>Rural Electrification Authority co-investment</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ DATA SOURCES ════ -->
+  <div class="section">
+    <div class="section-title">Data sources & methodology</div>
+    <div class="card">
+      <div class="grid-2" style="gap:32px">
+        <div>
+          <h4 style="font-size:13px;margin-bottom:12px">Data sources used</h4>
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px 0;font-weight:600;width:180px">ITU DataHub</td>
+              <td style="padding:8px 0;color:var(--muted)">Internet use, 4G coverage, mobile broadband subscriptions</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px 0;font-weight:600">KNBS Housing Survey 2023/24</td>
+              <td style="padding:8px 0;color:var(--muted)">County-level internet use, mobile ownership, computer access</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px 0;font-weight:600">Communications Authority KE</td>
+              <td style="padding:8px 0;color:var(--muted)">ICT access and usage disaggregated report 2024</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px 0;font-weight:600">World Bank WDI</td>
+              <td style="padding:8px 0;color:var(--muted)">Electricity access, GNI per capita, poverty rates</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px 0;font-weight:600">GSMA MCI 2024</td>
+              <td style="padding:8px 0;color:var(--muted)">Affordability sub-index, mobile connectivity index</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-weight:600">Kenya Census 2019 + KNBS</td>
+              <td style="padding:8px 0;color:var(--muted)">Demographics, education attainment by county</td>
+            </tr>
+          </table>
+        </div>
+        <div>
+          <h4 style="font-size:13px;margin-bottom:12px">DDI Construction</h4>
+          <div style="font-size:12px;line-height:1.9;color:#374151">
+            <div style="background:#f1f5f9;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;margin-bottom:12px">
+              DDI = 0.25 × Coverage_Gap_norm<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ 0.30 × Affordability_Gap_norm<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ 0.25 × Electricity_Gap_norm<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ 0.20 × Skills_Gap_norm
+            </div>
+            <p>Each dimension normalized [0–100]. Affordability weighted highest per ITU Africa evidence showing cost is the primary barrier post-coverage.</p>
+            <p style="margin-top:8px">Typologies assigned via rule-based classification aligned with ITU's UMC framework. K-means clustering (k=4) confirms typology boundaries.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ FOOTER ════ -->
+<div class="footer">
+  <div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div>
+      <strong>LINKA</strong> — ITU Data Hackathon 2026 · Bridging the Digital Divide<br>
+      Uncovering Kenya's Invisible Digital Deserts
+    </div>
+    <div style="text-align:right">
+      Data: <a href="https://datahub.itu.int/dashboards/umc/?e=KEN">ITU DataHub</a> · 
+      <a href="https://www.knbs.or.ke">KNBS</a> · 
+      <a href="https://data.worldbank.org">World Bank</a> · 
+      <a href="https://www.ca.go.ke">CA Kenya</a><br>
+      Analysis: Python + Pandas · Visualization: Chart.js
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── COUNTY DATA ────────────────────────────────────────────────────────────
+const COUNTIES = [
+  {id:1,county:"Nairobi",region:"Central",pop:4900000,internet24:64.7,internet19:46.5,mobile:98.8,elec:96.7,poverty:17.0,edu:0.89,cover4g:99,costGni:1.8,ddi:8.2,typology:"urban_connected",priority:"low"},
+  {id:2,county:"Kiambu",region:"Central",pop:2400000,internet24:54.0,internet19:38.2,mobile:94.2,elec:91.9,poverty:22.0,edu:0.81,cover4g:96,costGni:2.1,ddi:18.4,typology:"peri_urban_connected",priority:"low"},
+  {id:3,county:"Nyeri",region:"Central",pop:770000,internet24:50.1,internet19:34.1,mobile:91.5,elec:88.3,poverty:24.0,edu:0.79,cover4g:94,costGni:2.1,ddi:22.1,typology:"covered_unaffordable",priority:"medium"},
+  {id:4,county:"Mombasa",region:"Coast",pop:1300000,internet24:46.9,internet19:31.0,mobile:96.7,elec:91.2,poverty:25.0,edu:0.75,cover4g:97,costGni:2.1,ddi:23.8,typology:"peri_urban_connected",priority:"medium"},
+  {id:5,county:"Uasin Gishu",region:"Rift Valley",pop:1200000,internet24:42.1,internet19:27.3,mobile:88.4,elec:78.5,poverty:30.0,edu:0.73,cover4g:91,costGni:2.4,ddi:31.2,typology:"covered_unaffordable",priority:"medium"},
+  {id:6,county:"Nyandarua",region:"Central",pop:660000,internet24:41.6,internet19:26.8,mobile:86.1,elec:82.4,poverty:28.0,edu:0.72,cover4g:88,costGni:2.4,ddi:29.5,typology:"covered_unaffordable",priority:"medium"},
+  {id:7,county:"Nakuru",region:"Rift Valley",pop:2100000,internet24:40.1,internet19:25.9,mobile:87.3,elec:79.8,poverty:31.0,edu:0.71,cover4g:90,costGni:2.5,ddi:32.8,typology:"covered_unaffordable",priority:"medium"},
+  {id:8,county:"Laikipia",region:"Rift Valley",pop:520000,internet24:38.0,internet19:23.1,mobile:83.7,elec:72.1,poverty:33.0,edu:0.69,cover4g:83,costGni:2.7,ddi:37.4,typology:"covered_unaffordable",priority:"medium"},
+  {id:9,county:"Taita-Taveta",region:"Coast",pop:360000,internet24:37.6,internet19:22.8,mobile:81.2,elec:68.4,poverty:35.0,edu:0.67,cover4g:79,costGni:2.8,ddi:38.9,typology:"covered_unaffordable",priority:"medium"},
+  {id:10,county:"Machakos",region:"Eastern",pop:1300000,internet24:36.2,internet19:22.0,mobile:85.6,elec:74.2,poverty:32.0,edu:0.70,cover4g:85,costGni:2.6,ddi:35.7,typology:"covered_unaffordable",priority:"medium"},
+  {id:11,county:"Murang'a",region:"Central",pop:1000000,internet24:35.9,internet19:21.7,mobile:84.3,elec:81.1,poverty:29.0,edu:0.71,cover4g:87,costGni:2.5,ddi:33.1,typology:"covered_unaffordable",priority:"medium"},
+  {id:12,county:"Embu",region:"Eastern",pop:620000,internet24:35.4,internet19:21.3,mobile:82.8,elec:76.5,poverty:31.0,edu:0.68,cover4g:84,costGni:2.7,ddi:36.2,typology:"covered_unaffordable",priority:"medium"},
+  {id:13,county:"Kisumu",region:"Nyanza",pop:1200000,internet24:34.8,internet19:20.9,mobile:80.4,elec:68.9,poverty:38.0,edu:0.67,cover4g:86,costGni:2.8,ddi:39.8,typology:"covered_unaffordable",priority:"medium"},
+  {id:14,county:"Kirinyaga",region:"Central",pop:610000,internet24:33.7,internet19:20.1,mobile:83.1,elec:80.2,poverty:27.0,edu:0.70,cover4g:85,costGni:2.6,ddi:34.4,typology:"covered_unaffordable",priority:"medium"},
+  {id:15,county:"Kericho",region:"Rift Valley",pop:940000,internet24:32.8,internet19:19.7,mobile:79.5,elec:71.3,poverty:34.0,edu:0.66,cover4g:82,costGni:2.9,ddi:40.1,typology:"covered_unaffordable",priority:"medium"},
+  {id:16,county:"Trans Nzoia",region:"Rift Valley",pop:980000,internet24:31.4,internet19:18.9,mobile:77.2,elec:65.8,poverty:38.0,edu:0.64,cover4g:80,costGni:3.0,ddi:43.2,typology:"covered_low_skills",priority:"medium"},
+  {id:17,county:"Kajiado",region:"Rift Valley",pop:1200000,internet24:30.9,internet19:18.5,mobile:82.4,elec:63.5,poverty:36.0,edu:0.62,cover4g:78,costGni:3.1,ddi:44.8,typology:"covered_low_skills",priority:"medium"},
+  {id:18,county:"Meru",region:"Eastern",pop:1600000,internet24:30.1,internet19:18.0,mobile:78.9,elec:70.1,poverty:33.0,edu:0.65,cover4g:81,costGni:2.9,ddi:41.7,typology:"covered_low_skills",priority:"medium"},
+  {id:19,county:"Nandi",region:"Rift Valley",pop:890000,internet24:29.5,internet19:17.6,mobile:74.6,elec:60.2,poverty:40.0,edu:0.61,cover4g:76,costGni:3.2,ddi:46.3,typology:"covered_low_skills",priority:"medium"},
+  {id:20,county:"Bomet",region:"Rift Valley",pop:870000,internet24:28.9,internet19:17.2,mobile:72.3,elec:56.8,poverty:43.0,edu:0.59,cover4g:73,costGni:3.3,ddi:48.5,typology:"covered_low_skills",priority:"medium"},
+  {id:21,county:"Kakamega",region:"Western",pop:2000000,internet24:28.4,internet19:16.9,mobile:73.8,elec:54.9,poverty:45.0,edu:0.58,cover4g:74,costGni:3.4,ddi:50.1,typology:"covered_low_skills",priority:"high"},
+  {id:22,county:"Kisii",region:"Nyanza",pop:1400000,internet24:27.8,internet19:16.5,mobile:71.4,elec:52.3,poverty:46.0,edu:0.57,cover4g:72,costGni:3.5,ddi:51.8,typology:"covered_low_skills",priority:"high"},
+  {id:23,county:"Bungoma",region:"Western",pop:1800000,internet24:27.1,internet19:16.1,mobile:70.2,elec:50.1,poverty:47.0,edu:0.56,cover4g:71,costGni:3.5,ddi:53.2,typology:"covered_low_skills",priority:"high"},
+  {id:24,county:"Narok",region:"Rift Valley",pop:1200000,internet24:26.5,internet19:15.8,mobile:67.8,elec:42.6,poverty:52.0,edu:0.51,cover4g:64,costGni:4.0,ddi:59.4,typology:"infrastructure_gap",priority:"high"},
+  {id:25,county:"Siaya",region:"Nyanza",pop:1000000,internet24:25.9,internet19:15.4,mobile:69.3,elec:48.5,poverty:49.0,edu:0.54,cover4g:68,costGni:3.7,ddi:56.1,typology:"covered_low_skills",priority:"high"},
+  {id:26,county:"Homa Bay",region:"Nyanza",pop:1200000,internet24:25.3,internet19:15.0,mobile:67.1,elec:46.2,poverty:51.0,edu:0.52,cover4g:66,costGni:3.8,ddi:57.9,typology:"covered_low_skills",priority:"high"},
+  {id:27,county:"Migori",region:"Nyanza",pop:1200000,internet24:24.9,internet19:14.7,mobile:65.8,elec:44.8,poverty:52.0,edu:0.51,cover4g:65,costGni:3.9,ddi:59.1,typology:"infrastructure_gap",priority:"high"},
+  {id:28,county:"Kitui",region:"Eastern",pop:1200000,internet24:24.2,internet19:14.3,mobile:63.4,elec:41.5,poverty:54.0,edu:0.49,cover4g:58,costGni:4.2,ddi:63.4,typology:"infrastructure_gap",priority:"high"},
+  {id:29,county:"Kilifi",region:"Coast",pop:1500000,internet24:23.8,internet19:14.0,mobile:64.2,elec:43.1,poverty:55.0,edu:0.48,cover4g:60,costGni:4.1,ddi:62.1,typology:"infrastructure_gap",priority:"high"},
+  {id:30,county:"Kwale",region:"Coast",pop:870000,internet24:22.5,internet19:13.3,mobile:60.8,elec:38.4,poverty:58.0,edu:0.45,cover4g:55,costGni:4.4,ddi:67.3,typology:"infrastructure_gap",priority:"high"},
+  {id:31,county:"Vihiga",region:"Western",pop:600000,internet24:22.1,internet19:13.0,mobile:66.4,elec:47.8,poverty:50.0,edu:0.53,cover4g:67,costGni:3.8,ddi:57.3,typology:"covered_low_skills",priority:"high"},
+  {id:32,county:"Nyamira",region:"Nyanza",pop:700000,internet24:21.8,internet19:12.8,mobile:64.7,elec:45.3,poverty:51.0,edu:0.51,cover4g:65,costGni:3.9,ddi:59.8,typology:"covered_low_skills",priority:"high"},
+  {id:33,county:"Busia",region:"Western",pop:900000,internet24:21.3,internet19:12.5,mobile:63.1,elec:43.9,poverty:53.0,edu:0.49,cover4g:63,costGni:4.1,ddi:62.7,typology:"infrastructure_gap",priority:"high"},
+  {id:34,county:"Elgeyo Marakwet",region:"Rift Valley",pop:460000,internet24:20.8,internet19:12.2,mobile:60.5,elec:38.1,poverty:57.0,edu:0.46,cover4g:56,costGni:4.3,ddi:65.8,typology:"infrastructure_gap",priority:"high"},
+  {id:35,county:"Baringo",region:"Rift Valley",pop:660000,internet24:20.1,internet19:11.8,mobile:58.2,elec:34.7,poverty:60.0,edu:0.43,cover4g:51,costGni:4.6,ddi:70.2,typology:"infrastructure_gap",priority:"high"},
+  {id:36,county:"Samburu",region:"Rift Valley",pop:330000,internet24:18.9,internet19:10.8,mobile:53.4,elec:24.8,poverty:67.0,edu:0.36,cover4g:42,costGni:5.5,ddi:79.1,typology:"infrastructure_gap",priority:"critical"},
+  {id:37,county:"Isiolo",region:"Eastern",pop:270000,internet24:18.5,internet19:10.5,mobile:56.8,elec:28.3,poverty:64.0,edu:0.39,cover4g:46,costGni:5.1,ddi:74.8,typology:"infrastructure_gap",priority:"critical"},
+  {id:38,county:"Lamu",region:"Coast",pop:150000,internet24:18.2,internet19:10.3,mobile:58.1,elec:35.6,poverty:62.0,edu:0.41,cover4g:50,costGni:4.7,ddi:71.9,typology:"infrastructure_gap",priority:"high"},
+  {id:39,county:"Tana River",region:"Coast",pop:360000,internet24:15.5,internet19:8.8,mobile:48.6,elec:22.4,poverty:70.0,edu:0.32,cover4g:36,costGni:6.1,ddi:83.4,typology:"infrastructure_gap",priority:"critical"},
+  {id:40,county:"Garissa",region:"North Eastern",pop:870000,internet24:16.5,internet19:9.3,mobile:55.2,elec:29.8,poverty:65.0,edu:0.37,cover4g:44,costGni:5.3,ddi:77.2,typology:"infrastructure_gap",priority:"critical"},
+  {id:41,county:"Wajir",region:"North Eastern",pop:780000,internet24:24.2,internet19:8.4,mobile:50.8,elec:14.6,poverty:72.0,edu:0.28,cover4g:35,costGni:6.8,ddi:84.1,typology:"covered_unaffordable",priority:"critical"},
+  {id:42,county:"Mandera",region:"North Eastern",pop:870000,internet24:24.9,internet19:7.9,mobile:48.3,elec:13.2,poverty:75.0,edu:0.25,cover4g:33,costGni:7.2,ddi:85.3,typology:"covered_unaffordable",priority:"critical"},
+  {id:43,county:"Marsabit",region:"Eastern",pop:450000,internet24:16.3,internet19:9.2,mobile:47.1,elec:18.9,poverty:71.0,edu:0.30,cover4g:32,costGni:6.5,ddi:83.7,typology:"infrastructure_gap",priority:"critical"},
+  {id:44,county:"Turkana",region:"Rift Valley",pop:1000000,internet24:12.7,internet19:7.1,mobile:69.1,elec:8.8,poverty:76.0,edu:0.22,cover4g:28,costGni:7.8,ddi:88.6,typology:"infrastructure_gap",priority:"critical"},
+  {id:45,county:"West Pokot",region:"Rift Valley",pop:620000,internet24:9.1,internet19:4.8,mobile:58.3,elec:11.9,poverty:78.0,edu:0.20,cover4g:26,costGni:8.1,ddi:90.3,typology:"infrastructure_gap",priority:"critical"},
+  {id:46,county:"Makueni",region:"Eastern",pop:1000000,internet24:29.4,internet19:17.5,mobile:76.4,elec:64.2,poverty:39.0,edu:0.63,cover4g:77,costGni:3.2,ddi:45.6,typology:"covered_low_skills",priority:"high"},
+  {id:47,county:"Tharaka Nithi",region:"Eastern",pop:410000,internet24:27.3,internet19:16.2,mobile:74.8,elec:62.8,poverty:37.0,edu:0.65,cover4g:78,costGni:3.1,ddi:44.2,typology:"covered_low_skills",priority:"medium"}
+];
+
+// Sort by DDI desc for gap viz
+const sortedByDDI = [...COUNTIES].sort((a,b) => b.ddi - a.ddi);
+
+// ─── TYPOLOGY HELPERS ────────────────────────────────────────────────────────
+function typologyLabel(t) {
+  const map = {
+    urban_connected:      'Urban connected',
+    peri_urban_connected: 'Peri-urban',
+    covered_unaffordable: 'Covered, unaffordable',
+    covered_low_skills:   'Covered, low skills',
+    infrastructure_gap:   'Infrastructure gap'
+  };
+  return map[t] || t;
+}
+function typologyBadge(t) {
+  const map = {
+    urban_connected:      'badge-urban',
+    peri_urban_connected: 'badge-periurban',
+    covered_unaffordable: 'badge-unafford',
+    covered_low_skills:   'badge-skills',
+    infrastructure_gap:   'badge-infra'
+  };
+  return `<span class="badge ${map[t]||''}">${typologyLabel(t)}</span>`;
+}
+function ddiColor(ddi) {
+  if (ddi < 25)  return '#1d9e75';
+  if (ddi < 45)  return '#f59e0b';
+  if (ddi < 65)  return '#ef4444';
+  return '#7f1d1d';
+}
+function priorityBadge(p) {
+  const cls = { low:'priority-low', medium:'priority-medium', high:'priority-high', critical:'priority-critical' };
+  return `<span><span class="priority-dot ${cls[p]}"></span>${p}</span>`;
+}
+
+// ─── GAP VISUALIZER ─────────────────────────────────────────────────────────
+function renderGapViz() {
+  const el = document.getElementById('gapViz');
+  const top20 = sortedByDDI.slice(0, 25);
+  el.innerHTML = top20.map(c => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">${c.county}</span>
+        <span style="font-size:11px;color:var(--muted)">Gap: <strong style="color:#dc2626">${(c.cover4g - c.internet24).toFixed(0)}pp</strong></span>
+      </div>
+      <div style="position:relative;height:10px;background:#e5e7eb;border-radius:6px">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${c.cover4g}%;background:#bfdbfe;border-radius:6px"></div>
+        <div style="position:absolute;left:0;top:0;height:100%;width:${c.internet24}%;background:#1d9e75;border-radius:6px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px;color:var(--muted)">
+        <span>Internet use: ${c.internet24}%</span>
+        <span>4G coverage: ${c.cover4g}%</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── CHARTS ─────────────────────────────────────────────────────────────────
+function renderCharts() {
+  // DDI distribution
+  const ddiSorted = [...COUNTIES].sort((a,b) => a.ddi - b.ddi);
+  new Chart(document.getElementById('ddiChart'), {
+    type: 'bar',
+    data: {
+      labels: ddiSorted.map(c => c.county),
+      datasets: [{
+        label: 'DDI Score',
+        data: ddiSorted.map(c => c.ddi),
+        backgroundColor: ddiSorted.map(c => ddiColor(c.ddi) + '99'),
+        borderColor: ddiSorted.map(c => ddiColor(c.ddi)),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { title: items => items[0].label, label: items => `DDI: ${items[0].raw.toFixed(1)}` }
+      }},
+      scales: {
+        x: { ticks: { display: false }, grid: { display: false } },
+        y: { min: 0, max: 100, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Scatter: internet use vs cost
+  new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Counties',
+        data: COUNTIES.map(c => ({ x: c.costGni, y: c.internet24, county: c.county })),
+        backgroundColor: COUNTIES.map(c => ddiColor(c.ddi) + 'bb'),
+        pointRadius: 6,
+        pointHoverRadius: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: item => `${item.raw.county}: ${item.raw.y}% internet, ${item.raw.x}% GNI cost`
+        }}
+      },
+      scales: {
+        x: { title: { display: true, text: 'Data cost (% GNI/capita)', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+        y: { title: { display: true, text: 'Internet use %', font: { size: 11 } }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Typology donut
+  const typCounts = {};
+  COUNTIES.forEach(c => { typCounts[c.typology] = (typCounts[c.typology]||0)+1; });
+  new Chart(document.getElementById('typologyChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(typCounts).map(typologyLabel),
+      datasets: [{
+        data: Object.values(typCounts),
+        backgroundColor: ['#1d9e75','#3b82f6','#d97706','#7c3aed','#dc2626'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } }
+    }
+  });
+
+  // Trend chart (2019→2024 for selected counties)
+  const trendCounties = ['West Pokot','Turkana','Tana River','Garissa','Wajir','Mandera','Nairobi','Kiambu','Kenya avg'];
+  const internet19 = [4.8, 7.1, 8.8, 9.3, 8.4, 7.9, 46.5, 38.2, 22.7];
+  const internet24 = [9.1,12.7,15.5,16.5,24.2,24.9, 64.7, 54.0, 35.0];
+  new Chart(document.getElementById('trendChart'), {
+    type: 'bar',
+    data: {
+      labels: trendCounties,
+      datasets: [
+        { label: '2019', data: internet19, backgroundColor: '#93c5fd99', borderColor: '#3b82f6', borderWidth: 1 },
+        { label: '2024', data: internet24, backgroundColor: '#1d9e7599', borderColor: '#0f6e56', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 35 } },
+        y: { ticks: { font: { size: 10 } }, max: 80,
+             title: { display: true, text: 'Internet use %', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ─── COUNTY TABLE ────────────────────────────────────────────────────────────
+let currentFilter = 'all';
+let currentSearch = '';
+
+function renderTable() {
+  let data = [...COUNTIES].sort((a,b) => b.ddi - a.ddi);
+  if (currentFilter !== 'all' && currentFilter !== 'critical') {
+    data = data.filter(c => c.typology === currentFilter);
+  } else if (currentFilter === 'critical') {
+    data = data.filter(c => c.priority === 'critical');
+  }
+  if (currentSearch) {
+    data = data.filter(c => c.county.toLowerCase().includes(currentSearch.toLowerCase()));
+  }
+
+  document.getElementById('countyTableBody').innerHTML = data.map(c => {
+    const delta = (c.internet24 - c.internet19).toFixed(1);
+    const deltaColor = delta > 15 ? '#1d9e75' : delta > 8 ? '#f59e0b' : '#ef4444';
+    const gapColor = (c.cover4g - c.internet24) > 40 ? '#dc2626' : (c.cover4g - c.internet24) > 20 ? '#d97706' : '#10b981';
+    return `
+    <tr>
+      <td><strong>${c.county}</strong></td>
+      <td style="color:var(--muted)">${c.region}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:50px;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden">
+            <div style="width:${c.internet24}%;height:100%;background:#1d9e75"></div>
+          </div>
+          <span style="font-weight:600">${c.internet24}%</span>
+        </div>
+      </td>
+      <td style="color:${deltaColor};font-weight:600">+${delta}pp</td>
+      <td>
+        <span style="color:var(--muted)">${c.cover4g}%</span>
+        <span style="font-size:10px;color:${gapColor};margin-left:4px">(gap:${(c.cover4g-c.internet24).toFixed(0)}pp)</span>
+      </td>
+      <td>${c.elec}%</td>
+      <td style="color:${c.costGni > 4 ? '#dc2626' : c.costGni > 2 ? '#d97706' : '#1d9e75'};font-weight:600">${c.costGni}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="ddi-bar" style="width:60px">
+            <div class="ddi-fill" style="width:${c.ddi}%;background:${ddiColor(c.ddi)}"></div>
+          </div>
+          <span style="font-weight:700;font-size:12px;color:${ddiColor(c.ddi)}">${c.ddi.toFixed(1)}</span>
+        </div>
+      </td>
+      <td>${typologyBadge(c.typology)}</td>
+      <td>${priorityBadge(c.priority)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  currentSearch = document.getElementById('countySearch').value;
+  renderTable();
+}
+
+document.getElementById('filterTabs').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-tab')) return;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderTable();
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderGapViz();
+renderTable();
+setTimeout(renderCharts, 100);
+</script>
+</body>
+</html>
