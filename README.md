@@ -51,6 +51,9 @@ Add an ITU hackathon badge and a Kenya flag emoji for instant context.
 **One-paragraph project summary**
 Kenya has ~74% 4G coverage but only 35% actual internet use. Linka builds a Digital Desert Index (DDI) for all 47 counties to reveal where connectivity exists on paper but not in practice — and why. Built for the ITU Data Hackathon 2026.
 
+<img width="749" height="418" alt="image" src="https://github.com/user-attachments/assets/2a1bc1ec-dcb3-4a96-b3ac-9a0410b25e4e" />
+
+
 **The DDI formula** — paste it plainly:
 ```
 DDI = (coverage_gap + affordability_gap + electricity_gap + skills_gap) / 4
@@ -71,6 +74,7 @@ cd linka-digital-desert-index
 pip install pandas numpy geopandas
 python analysis/linka_analysis.py
 ```
+<img width="440" height="284" alt="image" src="https://github.com/user-attachments/assets/e54c762e-007f-49e3-8aef-d915d5894eec" />
 
 **File guide** — one line per file explaining what it does
 
